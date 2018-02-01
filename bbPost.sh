@@ -10,6 +10,7 @@ function display_usage {
 function main {
   local api_url=
   local api_params=
+  local json=
 
   while [[ $# -gt 0 ]]; do
     local param="$1"
@@ -22,6 +23,10 @@ function main {
       ;;
     '--params'|'-p')
       api_params="$1"
+      shift
+      ;;
+    '--json'|'-j')
+      json="$1"
       shift
       ;;
     *)
@@ -37,7 +42,12 @@ function main {
     display_usage
   fi
 
-  bb_get "${api_url}" "${api_params}"
+  if [ -z "${api_params}${json}" ] ; then
+    echo "** At least on parameter in --params --json should be define." >&2
+    display_usage
+  fi
+
+  bb_post "${api_url}" "${api_params}" "${json}"
 }
 
 # Configuration - BEGIN
