@@ -8,7 +8,7 @@ function bb_get {
 
   curl -X GET \
    --user "${BITBUCKET_API_USER}:${BITBUCKET_API_PASSWORD}" \
-   -H "X-Atlassian-Token: no-check" \
+   --header "X-Atlassian-Token: no-check" \
    --silent \
    "${BITBUCKET_API_URL_PREFIX}${api_url}?limit=1000&${api_params}"
   local curl_rc=$?
@@ -19,28 +19,32 @@ function bb_get {
 function bb_post {
   local api_url="$1"
   local api_params="$2"
-  local json="$3"
+  local json
+
+  json=$(compactJSON "$3") || exit 1
+
   local curl_rc
+  local curl_url="${BITBUCKET_API_URL_PREFIX}${api_url}?${api_params}"
 
   if [ -z "${json}" ]; then
     curl -X POST \
       --user "${BITBUCKET_API_USER}:${BITBUCKET_API_PASSWORD}" \
-      -H "X-Atlassian-Token: no-check" \
-     --silent \
-     "${BITBUCKET_API_URL_PREFIX}${api_url}?limit=1000&${api_params}"
+      --header "X-Atlassian-Token: no-check" \
+      --silent "${curl_url}"
     curl_rc=$?
   else
-    curl -X POST \
+    curl -vX POST \
       --user "${BITBUCKET_API_USER}:${BITBUCKET_API_PASSWORD}" \
-      -H "X-Atlassian-Token: no-check" \
-      -H "Content-Type: application/json" \
-      -d "${json}" \
-      --silent \
-      "${BITBUCKET_API_URL_PREFIX}${api_url}?limit=1000&${api_params}" | jq . | >&2
+      --header "X-Atlassian-Token: no-check" \
+      --header "Content-Type: application/json" \
+      --data "${json}" \
+      --silent "${curl_url}" | jq .
     curl_rc=$?
   fi
 
-  echo "bbPost: ${api_url} - curl_rc=${curl_rc}" >&2
+  echo "bbPost: ${curl_url} - curl_rc=${curl_rc}
+data
+: ${json}" >&2
 }
 
 function bb_create_user {
@@ -89,15 +93,11 @@ function bb_create_project {
   local name=$2
   local description=$3
 
-  local json
-
-  json=$(
-  compactJSON "{
+  local json="{
    \"key\": \"${key}\",
    \"name\": \"${name}\",
     \"description\": \"${description}\"
 }"
-  ) || exit 1
 
   bb_post '/rest/api/1.0/projects' '' "${json}"
 }
@@ -108,15 +108,11 @@ function bb_create_repo {
 
   ensure_not_empty "${projectKey}" 'projectKey'
 
-  local json
-
-  json=$(
-  compactJSON "{
+  local json="{
    \"name\": \"${name}\",
    \"scmId\": \"git\",
     \"forkable\": true
 }"
-  ) || exit 1
 
   bb_post "/rest/api/1.0/projects/{projectKey}/repos" '' "${json}"
 }
@@ -138,6 +134,10 @@ jq_is_required || exit 1
 # Load configuration
 #
 #source_files "${BITBUCKET_BASH_API_PATH}/config"
+
+if [ ! -d "${BITBUCKET_BASH_API_PATH}/my-config" ]; then
+  echo "* Warn could not find '${BITBUCKET_BASH_API_PATH}/my-config'" >&2
+fi
 
 if [ -d "${BITBUCKET_BASH_API_PATH}/my-config" ]; then
   source_files "${BITBUCKET_BASH_API_PATH}/my-config"

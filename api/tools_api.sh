@@ -49,9 +49,8 @@ function ensure_not_empty {
 # API :
 
 function source_files {
-  for f in $1/*
-  do
-    source "$f"
+  for file in $1/* ; do
+    source "${file}"
   done
 }
 
