@@ -135,6 +135,10 @@ jq_is_required || exit 1
 #
 #source_files "${BITBUCKET_BASH_API_PATH}/config"
 
+if [ ! -d "${BITBUCKET_BASH_API_PATH}/my-config" ]; then
+  echo "* Warn could not find '${BITBUCKET_BASH_API_PATH}/my-config'" >&2
+fi
+
 if [ -d "${BITBUCKET_BASH_API_PATH}/my-config" ]; then
   source_files "${BITBUCKET_BASH_API_PATH}/my-config"
 fi
